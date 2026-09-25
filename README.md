@@ -21,7 +21,7 @@ JSON
 docker run -d --name ig-follow-tracker --restart unless-stopped \
   -p 127.0.0.1:3100:3100 \
   -v "$PWD/ig-data:/data" \
-  miraccan00/ig-follow-tracker
+  ghcr.io/miraccan00/ig-follow-tracker
 
 open http://127.0.0.1:3100   # or just visit it in the browser
 ```
@@ -47,7 +47,7 @@ Handy commands:
 docker logs -f ig-follow-tracker                  # what is it doing
 docker exec ig-follow-tracker node src/cli.mjs check  # check from the terminal
 docker exec ig-follow-tracker node src/cli.mjs diff   # compare the last two snapshots
-docker pull miraccan00/ig-follow-tracker && docker rm -f ig-follow-tracker   # update, then run again
+docker pull ghcr.io/miraccan00/ig-follow-tracker && docker rm -f ig-follow-tracker   # update, then run again
 sqlite3 ig-data/tracker.db "select username, taken_at from snapshots"      # poke the database
 ```
 
@@ -116,7 +116,7 @@ JSON
 docker run -d --name ig-follow-tracker --restart unless-stopped \
   -p 127.0.0.1:3100:3100 \
   -v "$PWD/ig-data:/data" \
-  miraccan00/ig-follow-tracker
+  ghcr.io/miraccan00/ig-follow-tracker
 
 open http://127.0.0.1:3100
 ```

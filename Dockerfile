@@ -2,6 +2,10 @@
 # Node 22 for the built-in node:sqlite module.
 FROM node:22-trixie-slim
 
+LABEL org.opencontainers.image.source="https://github.com/miraccan00/ig-follow-tracker" \
+      org.opencontainers.image.description="Who unfollowed me? A tiny local app built on the Lightpanda headless browser." \
+      org.opencontainers.image.licenses="MIT"
+
 # ca-certificates: Lightpanda needs them for HTTPS. tzdata: so TZ / CHECK_AT use local time.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates tzdata \
