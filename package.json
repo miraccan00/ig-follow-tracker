@@ -1,0 +1,22 @@
+{
+  "name": "ig-follow-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.mjs",
+    "postinstall": "node scripts/setup.mjs",
+    "setup": "node scripts/setup.mjs --force",
+    "check": "node --disable-warning=ExperimentalWarning src/cli.mjs check",
+    "diff": "node --disable-warning=ExperimentalWarning src/cli.mjs diff",
+    "test": "node --disable-warning=ExperimentalWarning --test 'test/*.test.mjs'"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.0.0"
+  },
+  "description": "Who unfollowed me? A tiny local app built on the Lightpanda headless browser.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.5"
+  }
+}

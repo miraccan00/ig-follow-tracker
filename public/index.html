@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Takipçi Takibi</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --surface: #ffffff; --text: #1c1c1a; --muted: #6b6b66; --border: #e3e3de;
+    --accent: #3d5afe; --accent-text: #ffffff; --loss: #c62828; --loss-bg: #fdecea; --gain: #2e7d32; --gain-bg: #e8f5e9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --surface: #1e1e1c; --text: #ececea; --muted: #9a9a94; --border: #33332f;
+      --accent: #7c8cff; --accent-text: #0e0e0d; --loss: #ff8a80; --loss-bg: #3a1f1d; --gain: #81c784; --gain-bg: #1d2f1f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  h1 { font-size: 22px; margin: 0; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input { font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); min-width: 0; }
+  button { font: inherit; font-weight: 600; padding: 8px 14px; border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-text); cursor: pointer; }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--border); }
+  button:disabled { opacity: .5; cursor: default; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat .n { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .d { font-size: 13px; font-weight: 600; }
+  .loss { color: var(--loss); } .gain { color: var(--gain); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  ul.users { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow: auto; }
+  ul.users li { padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; justify-content: space-between; }
+  ul.users li:last-child { border-bottom: 0; }
+  ul.users a { color: var(--text); text-decoration: none; font-weight: 600; }
+  ul.users a:hover { text-decoration: underline; }
+  .pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .pill.loss { background: var(--loss-bg); } .pill.gain { background: var(--gain-bg); }
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tabs button { background: transparent; color: var(--muted); border: 1px solid transparent; }
+  .tabs button.on { color: var(--text); border-color: var(--border); background: var(--bg); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  .scroll-x { overflow-x: auto; }
+  pre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 12px; max-height: 220px; overflow: auto; white-space: pre-wrap; margin: 12px 0 0; }
+  ol { margin: 0 0 12px; padding-left: 20px; }
+  code { font-size: 13px; }
+  .hidden { display: none !important; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 8px; }
+  .fields label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Takipçi Takibi</h1>
+      <div class="muted" id="sub">Henüz kontrol yapılmadı</div>
+    </div>
+    <div class="row">
+      <input id="user" placeholder="kullanıcı adı (boş = kendi hesabın)" size="28">
+      <button id="run">Şimdi kontrol et</button>
+      <button class="ghost" id="toggleCookie">Cookie</button>
+    </div>
+  </header>
+
+  <section class="card hidden" id="cookieCard">
+    <h2>Instagram oturum cookie'si</h2>
+    <ol class="muted">
+      <li>Chrome'da giriş yaptığın instagram.com sekmesinde <b>⌥⌘I</b> ile DevTools'u aç.</li>
+      <li><b>Application</b> → <b>Cookies</b> → <code>https://www.instagram.com</code>.</li>
+      <li>Aşağıdaki üç satırın <b>Value</b> sütununu kopyalayıp yapıştır.</li>
+    </ol>
+    <form id="cookieForm">
+      <div class="fields">
+        <label>sessionid<input name="sessionid" required autocomplete="off"></label>
+        <label>csrftoken<input name="csrftoken" required autocomplete="off"></label>
+        <label>ds_user_id<input name="ds_user_id" required autocomplete="off"></label>
+      </div>
+      <div class="row"><button type="submit">Kaydet</button><span class="muted" id="cookieMsg"></span></div>
+    </form>
+  </section>
+
+  <section class="card hidden" id="jobCard">
+    <div class="row"><b id="jobTitle">Kontrol çalışıyor…</b></div>
+    <pre id="log"></pre>
+  </section>
+
+  <div id="content" class="hidden">
+    <div class="stats">
+      <div class="card stat"><div class="muted">Takipçi</div><div class="n" id="sFollowers">–</div><div class="d" id="dFollowers"></div></div>
+      <div class="card stat"><div class="muted">Takip edilen</div><div class="n" id="sFollowing">–</div><div class="d" id="dFollowing"></div></div>
+      <div class="card stat"><div class="muted">Geri takip etmeyen</div><div class="n" id="sNfb">–</div></div>
+      <div class="card stat"><div class="muted">Son kontrolde takipten çıkan</div><div class="n loss" id="sLost">–</div></div>
+    </div>
+
+    <section class="card">
+      <h2>Son değişiklikler <span class="muted" id="reportRange"></span></h2>
+      <div id="noReport" class="muted">İlk kontrol kaydedildi. Değişiklikler bir sonraki kontrolde görünecek.</div>
+      <div class="grid2" id="reportLists">
+        <div><h2 class="loss">Takipten çıkanlar</h2><ul class="users" id="lost"></ul></div>
+        <div><h2 class="gain">Yeni takipçiler</h2><ul class="users" id="gained"></ul></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="tabs" id="tabs">
+        <button data-tab="notFollowingBack" class="on">Geri takip etmeyenler</button>
+        <button data-tab="followers">Takipçiler</button>
+        <button data-tab="following">Takip edilenler</button>
+      </div>
+      <input id="search" placeholder="Ara…" style="width:100%;margin-bottom:8px">
+      <ul class="users" id="list"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Geçmiş</h2>
+      <div class="scroll-x">
+        <table>
+          <thead><tr><th>Tarih</th><th>Hesap</th><th>Takipçi</th><th>Takip</th><th>Takipten çıkan</th><th>Yeni</th></tr></thead>
+          <tbody id="history"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let S = null, tab = 'notFollowingBack', pollTimer = null;
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const when = (iso) => new Date(iso).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
+const signed = (n) => (n > 0 ? '+' + n : String(n));
+const userLi = (u, pill) => `<li><span><a href="https://www.instagram.com/${encodeURIComponent(u.username)}/" target="_blank" rel="noopener">@${esc(u.username)}</a> <span class="muted">${esc(u.fullName || '')}</span></span>${pill || ''}</li>`;
+const empty = (t) => `<li class="muted">${t}</li>`;
+
+async function api(path, body) {
+  const r = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+function renderList() {
+  const q = $('search').value.trim().toLowerCase();
+  const all = S.snapshot?.[tab] || [];
+  const items = q ? all.filter((u) => u.username.toLowerCase().includes(q) || (u.fullName || '').toLowerCase().includes(q)) : all;
+  $('list').innerHTML = items.length ? items.map((u) => userLi(u)).join('') : empty('Kimse yok');
+}
+
+function render() {
+  const { hasCookie, job, snapshot, report, account, history } = S;
+  if (!hasCookie) $('cookieCard').classList.remove('hidden');
+  $('run').disabled = job.running || !hasCookie;
+  $('run').textContent = job.running ? 'Çalışıyor…' : 'Şimdi kontrol et';
+
+  const showJob = job.running || (job.exitCode !== null && job.exitCode !== 0);
+  $('jobCard').classList.toggle('hidden', !showJob);
+  $('jobTitle').textContent = job.running ? 'Kontrol çalışıyor…' : 'Kontrol başarısız oldu';
+  $('jobTitle').className = job.running ? '' : 'loss';
+  $('log').textContent = job.log;
+  $('log').scrollTop = $('log').scrollHeight;
+
+  if (!snapshot) return;
+  $('content').classList.remove('hidden');
+  $('sub').textContent = `@${account.username} · son kontrol ${when(snapshot.takenAt)}`;
+  $('sFollowers').textContent = snapshot.followers.length;
+  $('sFollowing').textContent = snapshot.following.length;
+  $('sNfb').textContent = snapshot.notFollowingBack.length;
+
+  const fresh = report && report.to === snapshot.takenAt;
+  $('noReport').classList.toggle('hidden', !!fresh);
+  $('reportLists').classList.toggle('hidden', !fresh);
+  if (fresh) {
+    const d = report.counts;
+    $('dFollowers').innerHTML = `<span class="${d.followers.delta < 0 ? 'loss' : 'gain'}">${signed(d.followers.delta)}</span> <span class="muted">önceki kontrole göre</span>`;
+    $('dFollowing').innerHTML = `<span class="muted">${signed(d.following.delta)} önceki kontrole göre</span>`;
+    $('sLost').textContent = report.unfollowedYou.length;
+    $('reportRange').textContent = `${when(report.from)} → ${when(report.to)}`;
+    $('lost').innerHTML = report.unfollowedYou.map((u) => userLi(u, '<span class="pill loss">çıktı</span>')).join('') || empty('Kimse takipten çıkmadı');
+    $('gained').innerHTML = report.newFollowers.map((u) => userLi(u, '<span class="pill gain">yeni</span>')).join('') || empty('Yeni takipçi yok');
+  } else {
+    $('dFollowers').textContent = ''; $('dFollowing').textContent = ''; $('sLost').textContent = '–'; $('reportRange').textContent = '';
+  }
+
+  $('history').innerHTML = history.slice().reverse().map((h) => `<tr><td>${when(h.takenAt)}</td><td>@${esc(h.username)}</td><td>${h.followers}</td><td>${h.following}</td><td class="loss">${h.unfollowedYou ?? '–'}</td><td class="gain">${h.newFollowers ?? '–'}</td></tr>`).join('');
+  renderList();
+}
+
+async function refresh() {
+  S = await api('/api/state');
+  render();
+  clearTimeout(pollTimer);
+  if (S.job.running) pollTimer = setTimeout(refresh, 1500);
+}
+
+$('run').onclick = async () => {
+  try { await api('/api/check', { user: $('user').value }); } catch (e) { $('sub').textContent = e.message; }
+  refresh();
+};
+$('toggleCookie').onclick = () => $('cookieCard').classList.toggle('hidden');
+$('cookieForm').onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await api('/api/cookies', Object.fromEntries(new FormData(e.target)));
+    e.target.reset();
+    $('cookieMsg').textContent = 'Kaydedildi.';
+    $('cookieCard').classList.add('hidden');
+    refresh();
+  } catch (err) { $('cookieMsg').textContent = err.message; }
+};
+$('tabs').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  tab = b.dataset.tab;
+  for (const x of $('tabs').children) x.classList.toggle('on', x === b);
+  renderList();
+};
+$('search').oninput = renderList;
+refresh();
+</script>
+</body>
+</html>
