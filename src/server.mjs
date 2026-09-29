@@ -13,7 +13,21 @@ const HOST = process.env.HOST || '127.0.0.1';
 // Optional daily check without cron/launchd, e.g. CHECK_AT=09:00 (container local time, set TZ).
 const CHECK_AT = process.env.CHECK_AT;
 
-const store = openDefaultStore();
+// After a reboot the /data bind mount can show up a few seconds after the
+// container starts; wait for it instead of crash-looping.
+async function openStoreWhenReady(attempts = 30) {
+  for (let i = 1; ; i++) {
+    try {
+      return openDefaultStore();
+    } catch (e) {
+      if (i >= attempts) throw e;
+      if (i === 1) console.error(`database not ready yet (${e.message}), retrying for up to ${attempts * 2}s`);
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+}
+
+const store = await openStoreWhenReady();
 
 let job = { running: false, log: '', exitCode: null, startedAt: null };
 
