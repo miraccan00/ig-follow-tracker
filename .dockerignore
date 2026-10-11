@@ -1,0 +1,12 @@
+.git
+node_modules
+package.json
+package-lock.json
+src
+scripts
+test
+data
+*.db
+*.json.bak
+.DS_Store
+
